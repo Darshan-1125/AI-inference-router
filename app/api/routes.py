@@ -2,13 +2,13 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.services.resource_monitor import ResourceMonitor
-from app.services.cache import SimpleCache
+from app.services.cache import RedisCache
 
 
 router = APIRouter()
 
 monitor = ResourceMonitor()
-cache = SimpleCache()
+cache = RedisCache()
 
 
 class RouteRequest(BaseModel):
