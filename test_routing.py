@@ -8,7 +8,7 @@ resources = {
     "cpu_percent": 20,
     "ram_percent": 60,
     "bandwidth_mbps": 75,
-    "cloud_quota_percent": 80
+    "cloud_quota_percent": 0
 }
 
 
@@ -21,9 +21,14 @@ queries = [
 
 for query, complexity in queries:
 
-    decision = engine.decide(complexity, resources)
+    result = engine.decide(
+        complexity,
+        resources
+    )
 
-    print(f"Query: {query}")
-    print(f"Complexity: {complexity}")
-    print(f"Decision: {decision}")
-    print()
+    print("\n-------------------------")
+    print("Query:", query)
+    print("Complexity:", complexity)
+    print("Decision:", result["decision"])
+    print("Reason:", result["reason"])
+    print("Scores:", result["scores"])

@@ -1,41 +1,63 @@
+from app.services.path_evaluator import PathEvaluator
+from app.services.scoring import ScoringEngine
+
+
 class RoutingEngine:
+
+    def __init__(self):
+        self.evaluator = PathEvaluator()
+        self.scorer = ScoringEngine()
 
     def decide(self, complexity, resources):
 
-        ram = resources["ram_percent"]
-        cpu = resources["cpu_percent"]
-        bandwidth = resources["bandwidth_mbps"]
-        cloud_quota = resources["cloud_quota_percent"]
+        paths = self.evaluator.evaluate(
+            complexity,
+            resources
+        )
 
-        # Very limited local resources
-        if ram > 85 or cpu > 90:
-            if cloud_quota > 10:
-                return "cloud"
+        scores = {}
 
-            return "offline"
+        for path, values in paths.items():
 
-        # Simple requests should prefer local processing
-        if complexity == "simple":
-            return "local"
+            if not values["available"]:
+                continue
 
-        # Medium requests
-        if complexity == "medium":
-            if ram < 75 and cpu < 80:
-                return "local"
+            score = self.scorer.calculate_score(
+                quality=values["quality"],
+                cost=values["cost"],
+                latency=values["latency"],
+                resource_penalty=values["resource_penalty"]
+            )
 
-            if cloud_quota > 10:
-                return "cloud"
+            scores[path] = score
 
-            return "offline"
+        # Nothing available except fallback
+        if not scores:
+            return {
+                "decision": "offline",
+                "reason": "No other execution path is currently available.",
+                "scores": {},
+                "paths": paths
+            }
 
-        # Complex requests
-        if complexity == "complex":
-            if cloud_quota > 10 and bandwidth > 10:
-                return "cloud"
+        # Find highest score
+        best_path = max(
+            scores,
+            key=scores.get
+        )
 
-            if ram < 70 and cpu < 75:
-                return "local"
+        best_score = scores[best_path]
 
-            return "offline"
+        # Create explanation
+        reason = (
+            f"{best_path.capitalize()} was selected "
+            f"because it achieved the highest score of {best_score} "
+            f"among the available execution paths."
+        )
 
-        return "offline"
+        return {
+            "decision": best_path,
+            "reason": reason,
+            "scores": scores,
+            "paths": paths
+        }
